@@ -1,0 +1,345 @@
+#!/usr/bin/env perl
+=comment
+------------------------------------------------------------------------------
+  
+SWL - Short Web Language
+by Kris Kowal
+Version 2.9
+2004-10-02-21-15 PDT
+
+Requirements:
+
+  Perl 5
+
+    Perl is free software.  Most flavors of Unix, including Mac OS X, come
+     with Perl already installed.  If you find that your system does not have
+     Perl already, consult these links:
+
+    for MS Windows: http://www.activestate.com/Products/ActivePerl/
+    other systems: http://www.perl.com/download.csp
+
+  A compatible operating system.  SWL is known to run with the following
+   operating systems, but should work anywhere there is Perl:
+   
+    Microsoft Windows 2000 or newer
+    Solaris
+    Linux
+    Mac OS X
+
+Installation Instructions:
+
+  Run this installation program:
+    perl swl-2-9-install.pl [switches]
+    
+      --prefix=[prefix]
+          selects an alternate install location.  defaults are
+            /usr/local for UNIX
+            C:\Program Files for Microsoft Windows
+      --swl=[swl]
+          selects an alternate swl location.  defaults are
+            share/swl for UNIX
+            SWL for Microsoft Windows
+      --bin=[bin]
+          selects an alternate bin location (pertains to UNIX only)
+      --version
+          shows version information
+      --help
+          shows this message
+
+------------------------------------------------------------------------------
+=cut
+
+use strict;
+
+sub croak {
+  print shift;
+  if ( $::os eq 'windows' ) {
+    system "pause";
+  }
+  exit shift || -1;
+}
+
+sub mkpath {
+  my $path = shift;
+  my $mode = shift || 0777;
+  my @paths = split /[\\\/]/, $path;
+  for my $path ( map { join '/', @paths[0..$_] } 0..$#paths ) {
+    if ( not -e $path and $path ne '' ) {
+      my $code = mkdir $path, $mode;
+      if ( not $code ) {
+        if ( $::os eq 'windows' ) {
+          croak << "END";
+Unable to create path '$path'.  This may be because you lack
+administrative priviledges.  If this is the case, log in as an
+administrator.
+END
+	} else {
+          croak << "END";
+Unable to create path '$path'.  This may be because you are not
+logged in as root on this system.  If this is the case, use 'su' or
+'sudo' to gain adminstrator priviledges and try again.  If you aren't
+familiar with either of these commands, consult 'man su' and
+'man sudo'.
+END
+	}
+      }
+    }
+  }
+  return 1;
+}
+
+sub version {
+  print << "END";
+SWL (Short Web Language) 2.9 Installer
+(C) 2001-2004 by Kris Kowal
+END
+}
+
+sub help {
+  print << "END";
+Usage: perl swl-2-9-install.pl [switches]
+
+  --prefix=[prefix]
+      selects an alternate install location.  defaults are
+        /usr/local for UNIX
+        C:\Program Files for Microsoft Windows
+  --swl=[swl]
+      selects an alternate swl location.  defaults are
+        share/swl for UNIX
+        SWL for Microsoft Windows
+  --bin=[bin]
+      selects an alternate bin location (pertains to UNIX only)
+  --version
+      shows version information
+  --help
+      shows this message
+
+END
+}
+
+sub path {
+  my $path = shift;
+  1 while $path =~ s/^(.*)\/\//\//;
+  return $path;
+}
+
+# review arguments
+my $prefix;
+my $swl;
+my $bin;
+my $os;
+my $show_version;
+while ( $_ = shift ) {
+  if ( /^--(.+)/ ) {
+    $_ = $1;
+    if ( 0 ) {
+    } elsif ( /^help$/ ) {
+      version;
+      help;
+      exit 0;
+    } elsif ( /^version$/ ) {
+      version;
+      exit 0;
+    } elsif ( /^os=(.*)$/ ) {
+      $os = $1;
+    } elsif ( /^prefix=(.*)$/ ) {
+      $prefix = glob $1;
+    } elsif ( /^bin=(.*)$/ ) {
+      $bin = $1;
+    } elsif ( /^swl=(.*)$/ ) {
+      $swl = $1;
+    } else {
+      print STDERR "ERROR: invalid switch '$_'\n";
+    }
+  } elsif ( /^-(.+)$/ ) {
+    for ( split '', $1 ) {
+      if ( 0 ) {
+      } else {
+        print STDERR "ERROR: invalid switch '-$_'\n";
+      }
+    }
+  } else {
+    $prefix = $_;
+  }
+}
+
+my @oss = ( 'unix', 'windows' );
+if ( grep { $os eq $_ } @oss ) {
+} elsif ( -e '/usr' ) {
+  $os = 'unix';
+} elsif ( -e 'C:/Program Files' ) {
+  $os = 'windows';
+  $::os = 'windows'; # changes croak behaviour
+} else {
+  croak << "END";
+Unable to install because the installer is unable to determine which
+operating system to configure SWL for.  Unix varieties, including Mac OS X,
+typically contain a '/usr' directory.  Microsoft Windows machines typically
+contain a 'C:/Program Files' directory.  Aparantly your system has neither.
+To specify what system you are running, use the '--os' switch at the command
+line, for example:
+
+  perl swl-2-9-install.pl --os=windows
+  perl swl-2-9-install.pl --os=unix
+
+END
+}
+
+if ( $prefix ) {
+} elsif ( $os eq 'unix' ) {
+  $prefix = '/usr/local';
+} elsif ( $os eq 'windows' ) {
+  $prefix = 'C:/Program Files';
+} else {
+  croak << "END";
+Unable to install because the system was unable to determine the installation
+path prefix.  The installer can infer this location from what operating system
+you appear to be using.  You may explicitly specify your os with the --os=[os]
+switch.  For example:
+
+  perl swl-2-9-install.pl --os=windows
+  perl swl-2-9-install.pl --os=unix
+
+Additionally, you can specify an installation prefix with the --prefix=[prefix]
+switch.  For example:
+
+  perl swl-2-9-install.pl --prefix=\$HOME
+  perl swl-2-9-install.pl --prefix=/usr
+  perl swl-2-9-install.pl "--prefix=%USERPROFILE%"
+
+END
+}
+
+# setup bin location
+if ( $bin ) {
+  $bin = path "$prefix/$bin";
+  mkpath $bin, 0755;
+} elsif ( $os eq 'unix' ) {
+  $bin = "$prefix/bin";
+}
+
+# verify bin location
+if ( $os eq 'unix' ) {
+  if ( not -e $bin or not -W $bin ) {
+    croak << "END";
+Unable to install.  The installer will not be able to write to
+'$bin'.  This may be because you are not logged in as 'root'.
+
+If you are the system administrator and attempting to install
+SWL for all users, log in as 'root' using 'su' or 'sudo'.  For
+more information on 'su' and 'sudo', refer to 'man su' and
+'man sudo'.
+
+If you are using a Macintosh, '$bin' may not exist.  If that is
+the case, try overriding the default bin location:
+
+  perl swl-2-9-install.pl --bin=/usr/bin
+
+If you just want to install SWL for your personal use in your
+own home directory, try overriding the installation prefix:
+
+  perl swl-2-9-install.pl --prefix=\$HOME
+
+END
+  }
+}
+
+# setup swl location
+if ( $swl ) {
+} elsif ( $os eq 'unix' ) {
+  $swl = 'share/swl';
+} elsif ( $os eq 'windows' ) {
+  $swl = 'SWL';
+}
+$swl = path "$prefix/$swl";
+
+# check for previous installation
+if ( -e $swl ) {
+  croak << "END";
+Unable to install.  There seems to be an existing installation in the way.
+If you intent to proceed, remove the '$swl' installation
+and try again.
+END
+}
+
+mkpath $prefix, 0755;
+
+chdir $prefix or croak << "END";
+Installation failed because this installer was unable to enter the
+directory '$prefix'
+END
+
+mkpath $swl, 0755;
+
+chdir $swl or croak << "END";
+Installation failed because this installer was unable to enter the
+directory '$swl'
+END
+
+my $file_length = 0;
+my $file = '';
+my $content_length = 0;
+my $content = '';
+
+binmode DATA;
+while ( read DATA, $file_length, 4 ) {
+  read DATA, $file, unpack 'N', $file_length;
+  read DATA, my $type, 1;
+
+  if ( $type eq 'd' ) {
+
+    mkpath $file, 0755 or croak << "END";
+Installation failed because this installer was unable to create the
+directory '$file'
+END
+
+  } elsif ( $type eq 'f' ) {
+
+    read DATA, $content_length, 4;
+    read DATA, $content, unpack 'N', $content_length;
+    
+    $content =~ s{#PATH#([.\n]*)#/PATH#}{#PATH#\n'$swl',\n#/PATH#};
+
+    open FILE, ">$file" or croak << "END";
+Installation failed because this installer was unable to write the
+file '$file'
+END
+
+    binmode FILE;
+    syswrite FILE, $content, -1  + length $content; 
+    close FILE;
+
+  } else {
+
+    last;
+
+  }
+}
+
+if ( $os eq 'unix' ) {
+
+  chmod 0755, "$swl/swl.pl" or croak << "END";
+Installation failed because this installer was unable to set execute
+permission to 'swl.pl'
+END
+
+  mkpath $bin, 0755;
+  system "ln -s $swl/swl.pl $bin/swl";
+
+  croak << "END", 0;
+Installation complete.  The 'swl' command should now be available.  For
+information on how to use Short Web Language, use the 'swl --help' command.
+Documentation in HTML form resides in '$swl/doc'.
+END
+
+} elsif ( $os eq 'windows' ) {
+  system "install.reg";
+
+  croak << "END", 0;
+Installation complete.  You should be able to compile swl source code by
+double-clicking on a .swl file.  Documentation in HTML form resides in
+'$swl\\doc'.
+END
+}
+
+__DATA__

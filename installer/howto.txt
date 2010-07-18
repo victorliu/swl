@@ -1,0 +1,6 @@
+First run
+  ./swl-install.pl.manifest.build
+This should produce a file called swl-install.pl.manifest which contains a list of all files that need installing.
+Then run
+  ./swl-install.pl.build
+which will produce swl-install.pl that is the installer package.

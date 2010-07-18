@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+
+open ARCHIVE, ">swl-install.pl";
+binmode ARCHIVE;
+
+open CODE, 'swl-install.pl.code';
+print ARCHIVE <CODE>;
+close CODE;
+
+open MANIFEST, "swl-install.pl.manifest";
+my @files = map {chomp; $_} <MANIFEST>;
+
+chdir '..' or die;
+
+for my $file ( @files ) {
+	print "$file\n";
+	my $file_length = 1 + length $file;
+
+	if ( -d $file ) {
+
+		print ARCHIVE pack 'N', $file_length;
+		#print ARCHIVE pack "Z[$file_length]", $file;
+		print ARCHIVE pack "Z*", $file;
+		print ARCHIVE 'd';
+
+	} else {
+
+		local $/; undef $/;
+		open FILE, $file or next;
+		binmode FILE;
+		my $content = <FILE>;
+		my $content_length = 1 + length $content;
+		close FILE;
+
+		print ARCHIVE pack 'N', $file_length;
+		#print ARCHIVE pack "Z[$file_length]", $file;
+		print ARCHIVE pack "Z*", $file;
+		print ARCHIVE 'f';
+		print ARCHIVE pack 'N', $content_length;
+		#print ARCHIVE pack "Z[$content_length]", $content;
+		print ARCHIVE pack "Z*", $content;
+
+	}
+}
+
+close ARCHIVE;
+

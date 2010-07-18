@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+open FILE, '>swl-install.pl.manifest';
+
+chdir '..' or die;
+
+print FILE
+	  map "$_\n",
+	  grep { !/\.git/ }
+	  grep { !/installer/ }
+	  grep { $_ ne '.' }
+	  map { s/\.\///; $_ }
+	  split "\n",
+	  `find .`;
+
