@@ -10,6 +10,26 @@
 # Revision History
 # (most recent first)
 #
+# 2009-11-29-0200    distribution 11 of SWL 2
+# 2008-09-20-2319                             proper nesting of outline 'o'
+#                                              and 'ol' lists
+# 2008-09-20-2151                             recurse into table cells, fixed
+#                                              <br> placement to end of line
+#                                              Changed date format, added
+#                                              timestamp macro to replace old
+#                                              date macro
+# 2008-09-20-1755                             fixed author macro precedence,
+#                                              extra column at end of table,
+#                                              quoting of certain fixed HTML
+#                                              attributes. Fixed img alt text
+#                                              and property list quotation.
+#                                              Made <br> into <br /> for XHTML
+# 2008-07-27-0054                             fixed calendar leap years
+#                                              and day-of-week determination
+# 2005-11-12-2013                             strengthened mail/url distinction
+#                                              in swl inline tags.
+#                                             fixed critera for appending .html
+#                                              to a file name with no extension.
 # 2005-08-15-1918    distribution 10 of SWL 2 
 # 2005-08-06-1244                             fixed HTML include bug
 # 2004-10-02-2115 PDT distribution 9 of SWL 2 attempted to fix newline problem
@@ -868,13 +888,17 @@ sub CompilePost
       {
         $Tag = $Body;
       }
-      elsif ( $Tag eq 'date' )
+      elsif ( $Tag eq 'timestamp' )
       {
         $Tag = localtime;
       }
-      elsif ( $Tag eq 'author' )
+      elsif ( $Tag eq 'date' )
       {
-        $Tag = "SWL $SWL::VERSION";
+        my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+        my @months = (January,February,March,April,May,June,July,August,September,October,November,December);
+        $month = $months[$mon];
+        $realyear = 1900+$year;
+        $Tag = "$month $mday, $realyear";
       }
       # if it's a template changer
       elsif ( $Tag =~ /^(.*) \= (.*)$/ )
@@ -894,6 +918,10 @@ sub CompilePost
         my $node = &Structure( ":>\n$Tag" );
         $Tag = &Compile( $node );
         
+      }
+      elsif ( $Tag eq 'author' )
+      {
+        $Tag = "SWL $SWL::VERSION";
       }
       else
       {
@@ -986,15 +1014,14 @@ sub CompilePost
       {
         my $File = $Part;
         my $Name = shift @Parts;
-        my $Propertys = join '', map " $_", @Parts;
+        my $Propertys = join ' ', map { s/=(.*)/="\1"/; "$_" } @Parts;
 
         $File =~ s/ /%20/g;
-        $Name = qq("$Name") if $Name =~ ' ';
 
-        $Tag = qq(<img src="$File" alt="$Name$Propertys">);
+        $Tag = qq(<img src="$File" alt="$Name" $Propertys>);
       }
       # if it's an email address
-      elsif ( $Part =~ /\@/ )
+      elsif ( $Part =~ /^[^\/]+\@[a-z0-9\-_\.]+$/ )
       {
         my $Link = $Part;
         my $Name = shift @Parts;
@@ -1009,7 +1036,7 @@ sub CompilePost
 	    $Name = '"' . ( join '', map "&#$_", map ord, split '', $Name ) . '"';
 	  }
           $Tag = qq{
-            <script language=javascript>
+            <script language="javascript">
 	      var left = [ $Left ].reverse().join("");
 	      var right = [ $Right ].reverse().join("");
               document.write( "<a href='mailto:" + left + '&#64' + right + "'>" );
@@ -2149,7 +2176,7 @@ sub BuildHeading
         $Line =~ s/\s*$//;
 
         $Out .= "\t" x ( $Level + 1 );
-        $Out .= "<br>$Line\n";
+        $Out .= "<br />$Line\n";
       }
       
     }
@@ -2334,7 +2361,7 @@ sub BuildCommentList
     if ( $Node->{'vars'}{'hr'}[1]{'clear'}[0][0] )
     {
       $Node->{'vars'}{'hr'}[1]{'clear'}[0][0] = 0;
-      $Out .= "<br clear=all>";
+      $Out .= "<br clear=\"all\" />";
       $Out .= "\n";
     }
     $Out .= "<hr>";
@@ -2430,7 +2457,7 @@ sub BuildCommentList
           if ( $line ne '' )
           {
             $Out .= "\t" x ( $Level + 1 );
-            $Out .= '<br>' if $DoBr;
+            $Out .= '<br />' if $DoBr;
             $Out .= "$line";
             $Out .= "\n";
             $DoBr = 1;
@@ -2502,35 +2529,35 @@ sub BuildCommentList
 
   '#' => sub
   {
-    return BuildList( shift, shift, shift, '<ol type=1>', '</ol>' );
+    return BuildList( shift, shift, shift, '<ol type="1">', '</ol>' );
   },
 
 ################################################################################
 
   'a' => sub
   {
-    return BuildList( shift, shift, shift, '<ol type=a>', '</ol>' );
+    return BuildList( shift, shift, shift, '<ol type="a">', '</ol>' );
   },
 
 ################################################################################
 
   'A' => sub
   {
-    return BuildList( shift, shift, shift, '<ol type=A>', '</ol>' );
+    return BuildList( shift, shift, shift, '<ol type="A">', '</ol>' );
   },
 
 ################################################################################
 
   'i' => sub
   {
-    return BuildList( shift, shift, shift, '<ol type=i>', '</ol>' );
+    return BuildList( shift, shift, shift, '<ol type="i">', '</ol>' );
   },
 
 ################################################################################
 
   'I' => sub
   {
-    return BuildList( shift, shift, shift, '<ol type=I>', '</ol>' );
+    return BuildList( shift, shift, shift, '<ol type="I">', '</ol>' );
   },
 
 ################################################################################
@@ -2551,35 +2578,35 @@ sub BuildCommentList
 
   '#l' => sub
   {
-    return BuildListLink( shift, shift, shift, '<ol type=1>', '</ol>' );
+    return BuildListLink( shift, shift, shift, '<ol type="1">', '</ol>' );
   },
 
 ################################################################################
 
   'al' => sub
   {
-    return BuildListLink( shift, shift, shift, '<ol type=a>', '</ol>' );
+    return BuildListLink( shift, shift, shift, '<ol type="a">', '</ol>' );
   },
 
 ################################################################################
 
   'Al' => sub
   {
-    return BuildListLink( shift, shift, shift, '<ol type=A>', '</ol>' );
+    return BuildListLink( shift, shift, shift, '<ol type="A">', '</ol>' );
   },
 
 ################################################################################
 
   'il' => sub
   {
-    return BuildListLink( shift, shift, shift, '<ol type=i>', '</ol>' );
+    return BuildListLink( shift, shift, shift, '<ol type="i">', '</ol>' );
   },
 
 ################################################################################
 
   'Il' => sub
   {
-    return BuildListLink( shift, shift, shift, '<ol type=I>', '</ol>' );
+    return BuildListLink( shift, shift, shift, '<ol type="I">', '</ol>' );
   },
 
 ################################################################################
@@ -2719,13 +2746,53 @@ sub BuildCommentList
           elsif ( $NodeSubSub->{'mark'} eq 'c' )
           {
             &ClearBlankNodes( $NodeSubSub );
-            foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
+            
+            my $Cell = '';
+            if ( @{ $NodeSubSub->{'nodes'} } == 1 ) # single node, one liner, possibly needs compiling
             {
-              my $Cell = $NodeSubSubSub->{'nodes'}[0];
-              $Cell = '&nbsp;' if $Cell eq '.';
-              $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
-              push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              if ( $NodeSubSub->{'nodes'}[0]{'mark'} eq '' )
+              {
+                my $line = $NodeSubSub->{'nodes'}[0]{'nodes'}[0];
+                $line =~ s/^\s*//;
+                $line =~ s/\s*$//;
+                if ( $line ne '' )
+                {
+                  $Cell .= "\t" x ($Level + 3);
+                  $Cell .= "$line\n";
+                }
+              }
+              else
+              {
+                $Cell .= &Compile( $NodeSubSub->{'nodes'}[0], $NodeSubSubSub, $Level + 3 );
+              }
             }
+            else
+            { # Multi-liner, will insert <br>'s
+              my $DoBr = 0;
+              foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
+              {
+                if ( $NodeSubSubSub->{'mark'} eq '' )
+                {
+                  my $line = $NodeSubSubSub->{'nodes'}[0];
+                  $line =~ s/^\s*//;
+                  $line =~ s/\s*$//;
+                  if ( $line ne '' )
+                  {
+                    $Cell .= "\t" x ( $Level + 3 );
+                    $Cell .= "$line";
+                    $Cell .= '<br />' unless $DoBr;
+                    $Cell .= "\n";
+                    $DoBr = 1;
+                  }
+                }
+                else
+                {
+                  $Cell .= &Compile( $NodeSubSubSub, $NodeSubSub, $Level + 3 );
+                }
+              }
+            }
+			push @{ $Table->[ $X ][ $Y ] }, $Cell;
+            
             $Y++;
           }
           # if it's a header cell tag, interpret each line as a line of
@@ -2733,13 +2800,53 @@ sub BuildCommentList
           elsif ( $NodeSubSub->{'mark'} eq 'ch' )
           {
             &ClearBlankNodes( $NodeSubSub );
-            foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
+            
+            my $Cell = '';
+            if ( @{ $NodeSubSub->{'nodes'} } == 1 ) # single node, one liner, possibly needs compiling
             {
-              my $Cell = $NodeSubSubSub->{'nodes'}[0];
-              $Cell = '&nbsp;' if $Cell eq '.';
-              $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
-              push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              if ( $NodeSubSub->{'nodes'}[0]{'mark'} eq '' )
+              {
+                my $line = $NodeSubSub->{'nodes'}[0]{'nodes'}[0];
+                $line =~ s/^\s*//;
+                $line =~ s/\s*$//;
+                if ( $line ne '' )
+                {
+                  $Cell .= "\t" x ($Level + 3);
+                  $Cell .= "$line\n";
+                }
+              }
+              else
+              {
+                $Cell .= &Compile( $NodeSubSub->{'nodes'}[0], $NodeSubSubSub, $Level + 3 );
+              }
             }
+            else
+            { # Multi-liner, will insert <br>'s
+              my $DoBr = 0;
+              foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
+              {
+                if ( $NodeSubSubSub->{'mark'} eq '' )
+                {
+                  my $line = $NodeSubSubSub->{'nodes'}[0];
+                  $line =~ s/^\s*//;
+                  $line =~ s/\s*$//;
+                  if ( $line ne '' )
+                  {
+                    $Cell .= "\t" x ( $Level + 3 );
+                    $Cell .= "$line";
+                    $Cell .= '<br />' unless $DoBr;
+                    $Cell .= "\n";
+                    $DoBr = 1;
+                  }
+                }
+                else
+                {
+                  $Cell .= &Compile( $NodeSubSubSub, $NodeSubSub, $Level + 3 );
+                }
+              }
+            }
+			push @{ $Table->[ $X ][ $Y ] }, $Cell;
+            
             bless $Table->[ $X ][ $Y ], 'header'; # note to make it a <th> cell
             $Y++;
           }
@@ -2785,10 +2892,18 @@ sub BuildCommentList
             &ClearBlankNodes( $NodeSubSub );
             foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
             {
-              my $Cell = $NodeSubSubSub->{'nodes'}[0];
-              $Cell = '&nbsp;' if $Cell eq '.';
-              $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
-              push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              if ( $NodeSubSubSub->{'mark'} eq '' )
+              {
+                my $Cell = $NodeSubSubSub->{'nodes'}[0];
+                $Cell = '&nbsp;' if $Cell eq '.';
+                $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
+                push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              }
+              else
+              {
+                my $Cell = &Compile( $NodeSubSubSub, $NodeSubSub, $Level+3 );
+                push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              }
             }
             $Y++;
           }
@@ -2799,10 +2914,18 @@ sub BuildCommentList
             &ClearBlankNodes( $NodeSubSub );
             foreach my $NodeSubSubSub ( @{ $NodeSubSub->{'nodes'} } )
             {
-              my $Cell = $NodeSubSubSub->{'nodes'}[0];
-              $Cell = '&nbsp;' if $Cell eq '.';
-              $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
-              push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              if ( $NodeSubSubSub->{'mark'} eq '' )
+              {
+                my $Cell = $NodeSubSubSub->{'nodes'}[0];
+                $Cell = '&nbsp;' if $Cell eq '.';
+                $Cell = ( "\t" x ( $Level + 3 ) ) . $Cell . "\n";
+                push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              }
+              else
+              {
+                my $Cell = &Compile( $NodeSubSubSub, $NodeSubSub, $Level+3 );
+                push @{ $Table->[ $X ][ $Y ] }, $Cell;
+              }
             }
             bless $Table->[ $X ][ $Y ], 'header'; # note to make it a <th> cell
             $Y++;
@@ -2901,7 +3024,7 @@ sub BuildCommentList
         my $PropertyColspan;
         while
         (
-          $Y <= $YMax + 1
+          $Y <= $YMax
           and
           (
             $Row->[ $Y ] eq ''
@@ -2912,7 +3035,7 @@ sub BuildCommentList
           $Colspan++;
           $Y++;
         }
-        $PropertyColspan = " colspan=$Colspan" if $Colspan > 1;
+        $PropertyColspan = " colspan=\"$Colspan\"" if $Colspan > 1;
 
         # write out the cell's tag
         $Out .= "\t" x ( $Level + 2 );
@@ -2932,7 +3055,7 @@ sub BuildCommentList
         # do the remaining lines
         foreach my $Line ( @$Cell )
         {
-          $Out .= "<br>$Line";
+          $Out .= "<br />$Line";
         }
         
         # write the end tag for the cell
@@ -2975,7 +3098,7 @@ sub BuildCommentList
     # set default date (current) if there is no other
     my $Year =  substr localtime, 20, 4;
     my $Month = $SWL::CalendarMonthNumberFromShort{ substr localtime, 4, 3 };
-    my $Day = substr localtime, 9, 2;
+    my $Day = substr localtime, 8, 2;
     $Day =~ s/\s//g;
     %Dates = ( $Year => { $Month => { $Day => [], }, }, ) if %Dates == 0;
 
@@ -3067,7 +3190,7 @@ sub BuildCommentList
                   join '', 
                     "<td$PropertyEventCell>",
 	      	          (
-		                  join "<br>", 
+		                  join "<br />", 
 		                    "<b>$_</b>",
 		                    @{$Dates{$Year}{$Month}{$_}}	
 		                ),
@@ -3334,34 +3457,43 @@ sub BuildCommentList
 
       if ( $NodeSub->{'mark'} eq '' )
       {
-
         my $Line = $NodeSub->{'nodes'}[0];
         $Line =~ s/\s*$//;
         
         # determine the outline level based on the number of tabs on the line
         $Line =~ s/^(\s*)//;
         my $LevelNew = 1 + length $1;
-        
-        while ( $Level > $LevelNew )
-        {
-          $Level--;
-          $Out .= "\t" x ( $LevelBase + $Level );
-          $Out .= "</ol>";
-          $Out .= "\n";
-        }
-        while ( $Level < $LevelNew )
-        {
-          $Out .= "\t" x ( $LevelBase + $Level );
-          $Out .= "<ol type=";
-          $Out .= $ListHeadings[ $Level % ( $#ListHeadings + 1 ) ];
-          $Out .= ">";
-          $Out .= "\n";
-          $Level++;
-        }
 
+        if($LevelNew < $Level)
+        {
+          $Out.="</li>\n";
+          my $LevelDiff = $Level - $LevelNew;
+          while ( $LevelNew < $Level )
+          {
+            $Level--;
+            $Out .= "\t" x ( $LevelBase + $Level );
+            $Out .= "</ol></li>\n";
+          }
+        }
+        elsif($LevelNew > $Level)
+        {
+          $Out .= "\n";
+          while ( $LevelNew > $Level )
+          {
+            $Out .= "\t" x ( $LevelBase + $Level );
+            $Out .= "<ol type=\"";
+            $Out .= $ListHeadings[ $Level % ( $#ListHeadings + 1 ) ];
+            $Out .= "\">";
+            $Out .= "\n";
+            $Level++;
+          }
+        }
+        else
+        {
+          $Out.="</li>\n";
+        }
         $Out .= "\t" x ( $LevelBase + $Level );
-        $Out .= "<li>$Line</li>";
-        $Out .= "\n";
+        $Out .= "<li>$Line";
 
       }
       else
@@ -3374,9 +3506,9 @@ sub BuildCommentList
     while ( $Level > 0 )
     {
       $Level--;
+      $Out .= "</li>\n";
       $Out .= "\t" x ( $LevelBase + $Level );
       $Out .= "</ol>";
-      $Out .= "\n";
     }
 
     return $Out;
@@ -3421,26 +3553,37 @@ sub BuildCommentList
         $Link =~ s/ /%20/g;
         $Name = $Link if $Name eq '';
         
-        while ( $Level > $LevelNew )
+        if($LevelNew < $Level)
         {
-          $Level--;
-          $Out .= "\t" x ( $LevelBase + $Level );
-          $Out .= "</ol>";
-          $Out .= "\n";
+          $Out.="</li>\n";
+          my $LevelDiff = $Level - $LevelNew;
+          while ( $LevelNew < $Level )
+          {
+            $Level--;
+            $Out .= "\t" x ( $LevelBase + $Level );
+            $Out .= "</ol></li>\n";
+          }
         }
-        while ( $Level < $LevelNew )
+        elsif($LevelNew > $Level)
         {
-          $Out .= "\t" x ( $LevelBase + $Level );
-          $Out .= "<ol type=";
-          $Out .= $ListHeadings[ $Level % ( $#ListHeadings + 1 ) ];
-          $Out .= ">";
           $Out .= "\n";
-          $Level++;
+          while ( $LevelNew > $Level )
+          {
+            $Out .= "\t" x ( $LevelBase + $Level );
+            $Out .= "<ol type=\"";
+            $Out .= $ListHeadings[ $Level % ( $#ListHeadings + 1 ) ];
+            $Out .= "\">";
+            $Out .= "\n";
+            $Level++;
+          }
+        }
+        else
+        {
+          $Out.="</li>\n";
         }
 
         $Out .= "\t" x ( $LevelBase + $Level );
-        $Out .= qq(<li><a href="$Link">$Name</a></li>);
-        $Out .= "\n";
+        $Out .= qq(<li><a href="$Link">$Name</a>);
 
       }
       else
@@ -3453,9 +3596,9 @@ sub BuildCommentList
     while ( $Level > 0 )
     {
       $Level--;
+      $Out .= "</li>\n";
       $Out .= "\t" x ( $LevelBase + $Level );
       $Out .= "</ol>";
-      $Out .= "\n";
     }
 
     return $Out;
@@ -3731,13 +3874,14 @@ sub Property {
 
 sub CalendarMonthSeed
 {
-
+  # find the day of the week of the first day in a given month & year
+  # modified so that 0 = sunday, 1 = monday, ...
   # use Zeller's Congruence
 
   my $year = $_[0];
-  my $month = $_[1] - 2;
+  my $month = $_[1];
 
-  if ( $month < 1 )
+  if ( $month < 3 )
   {
     $month += 12;
     $year--;
@@ -3748,7 +3892,7 @@ sub CalendarMonthSeed
     + 1
     + int
       (
-        (13 * $month) / 5
+        (26 * (1+$month)) / 10
       )
     + ( $year % 100 )
     + int
@@ -3760,6 +3904,7 @@ sub CalendarMonthSeed
         int( $year / 100 ) / 4
       )
     - ( 2 * int( $year / 100 ) )
+    + 6
   ) % 7
   ;
 
@@ -3774,25 +3919,7 @@ sub CalendarMonthCount
   my %Count = 
   (
     1 => 31,
-    2 =>
-    (
-      ( $year % 4 )?
-          # is not divisible by 4
-          28
-        :
-          # is divisible by 4
-          ( $year % 100 )?
-              # is divisible by 4 and is not divisible by 100
-              ( $year % 400 )?
-                  # is divisible by 4, is not divisible by 100, is not divisible by 400
-                  28
-                :
-                  # is divisible by 4, is not divisible by 100, is divisible by 400
-                  29
-            :
-              # is divisible by 4 and is divisible by 100
-              28
-    ),
+    2 => ( ((($year % 4 == 0) && ($year % 100 != 0)) || ($year % 400 == 0)) ? 29 : 28 ),
     3 => 31,
     4 => 30,
     5 => 31,

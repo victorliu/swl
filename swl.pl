@@ -125,7 +125,10 @@ while ( my $arg = shift @args ) {
 			$in = SWL::Grok( $in );
 			$out = $in;
 			$out =~ s/\.[^\.]*$//;
-			$out .= ".html" if $out !~ /\./;
+			$out .= ".html" if
+                $out !~ /\./ or
+                $out =~ /\/[^\.]+$/
+            ;
 		} else {
 			$out = '-';
 		}
