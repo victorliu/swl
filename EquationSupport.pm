@@ -2,7 +2,7 @@ package SWL::EquationSupport;
 
 use 5.004;  # i.e. not tested under earlier versions
 use strict;
-use vars qw($VERSION @ISA @EXPORT $NEED_PATHMUNGE $DVIPNG_BIN $LATEX_BIN $EQUATION_BASELINE $DISPLAY_EQUATION_BEGIN $DISPLAY_EQUATION_END $INLINE_EQUATION_BEGIN $INLINE_EQUATION_END);
+use vars qw($VERSION @ISA @EXPORT $NEED_PATHMUNGE $DVIPNG_BIN $LATEX_BIN $EQUATION_BASELINE $DISPLAY_EQUATION_BEGIN $DISPLAY_EQUATION_END $INLINE_EQUATION_BEGIN $INLINE_EQUATION_END $EQUATION_DIR);
 
 $VERSION = '1.0';
 $DVIPNG_BIN = 'dvipng';
@@ -13,6 +13,7 @@ $DISPLAY_EQUATION_BEGIN = '\[ ';
 $DISPLAY_EQUATION_END = ' \]';
 $INLINE_EQUATION_BEGIN = '\(';
 $INLINE_EQUATION_END = '\)';
+$EQUATION_DIR = 'eq';
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -100,7 +101,7 @@ sub ReplaceEquation{
 	my $eqstr = shift;
 	my $image_filename = shift;
 	my $is_display = shift;
-	my $eqdir = shift;
+	my $eqdir = $EQUATION_DIR;
 
 	if($eqdir){
 		if(! -d $eqdir){

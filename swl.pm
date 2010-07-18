@@ -10,8 +10,6 @@
 # Revision History
 # (most recent first)
 #
-# 2010-07-18-0208 PDT vkl                     Added LaTeX equation support
-#                                              through add-on module.
 # 2009-11-29-0200    distribution 11 of SWL 2
 # 2008-09-20-2319                             proper nesting of outline 'o'
 #                                              and 'ol' lists
@@ -1088,7 +1086,7 @@ sub CompilePost
         $StringRight = substr $StringRight, $Pos + length($delim_end);
       }
       $checksum = sprintf('%x', unpack("%32C*", $Tag));
-      $Tag = &SWL::EquationSupport::ReplaceEquation($Tag, $checksum.'.png', 1, 'eq');
+      $Tag = &SWL::EquationSupport::ReplaceEquation($Tag, $checksum.'.png', 1);
       $String = $StringLeft . $Tag . $StringRight;
     }
     
@@ -1107,7 +1105,7 @@ sub CompilePost
         $StringRight = substr $StringRight, $Pos + length($delim_end);
       }
       $checksum = sprintf('%x', unpack("%32C*", $Tag));
-      $Tag = &SWL::EquationSupport::ReplaceEquation($Tag, $checksum.'.png', 0, 'eq');
+      $Tag = &SWL::EquationSupport::ReplaceEquation($Tag, $checksum.'.png', 0);
       $String = $StringLeft . $Tag . $StringRight;
     }
   }
