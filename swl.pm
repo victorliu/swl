@@ -170,7 +170,7 @@ sub Glob {
   }
 
   my @files;
-  for $lefts ( @leftss ) {
+  for my $lefts ( @leftss ) {
     my $file = join '/', @$lefts;
     push @files, $file if -e $file;
   }
@@ -253,7 +253,7 @@ sub Structure
   my @Lines = split /\n/, shift;
 
   # map the lines and assign their line number
-  my @Lines = map
+  @Lines = map
   {
     $Lines[$_] =~ s/^(\s*)//;
     {
@@ -653,7 +653,7 @@ sub StructureInclude
 		'txt' => 'TXT',
 	);
 	$Extention = $1 if not $Extention and $File =~ m/\.([^\.]+)$/i;
-	$Type = $Types{$Extention};
+	my $Type = $Types{$Extention};
 
 	(open FILE, "$Grok") or print STDERR "Unable to open '$File'\n";
 	my $In = join "\n", map {chomp; $_} <FILE>;
@@ -895,8 +895,8 @@ sub CompilePost
       {
         my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
         my @months = (January,February,March,April,May,June,July,August,September,October,November,December);
-        $month = $months[$mon];
-        $realyear = 1900+$year;
+        my $month = $months[$mon];
+        my $realyear = 1900+$year;
         $Tag = "$month $mday, $realyear";
       }
       # if it's a template changer
@@ -1013,7 +1013,7 @@ sub CompilePost
       {
         my $File = $Part;
         my $Name = shift @Parts;
-        my $Propertys = join ' ', map { s/=(.*)/="\1"/; "$_" } @Parts;
+        my $Propertys = join ' ', map { s/=(.*)/="$1"/; "$_" } @Parts;
 
         $File =~ s/ /%20/g;
 
@@ -1068,8 +1068,10 @@ sub CompilePost
   }
 
   # 2010-07-17 vkl Added equation support
-  if(eval('use EquationSupport; 1')){
-    use EquationSupport qw(ReplaceEquation);
+  eval {require EquationSupport};
+  unless ($@) {
+    require EquationSupport;
+    import EquationSupport;
     # find and replace equation bits
     my $delim_start = $SWL::EquationSupport::DISPLAY_EQUATION_BEGIN;
     my $delim_end = $SWL::EquationSupport::DISPLAY_EQUATION_END;
@@ -1193,7 +1195,7 @@ sub Compile
     
     # search builtin marks
     # sort keys
-    my @Marks = sort
+    @Marks = sort
     {
       my $aba = $a;
       my $bab = $b;
@@ -2433,6 +2435,11 @@ sub BuildCommentList
         my $line = $NodeSub->{'nodes'}[0];
         $line =~ s/^\s*//;
         $line =~ s/\s*$//;
+        eval {require MarkdownSupport}; unless ($@) {
+			require MarkdownSupport;
+			import MarkdownSupport;
+			$line = &SWL::MarkdownSupport::Markdown($line);
+		}
         if ( $line ne '' )
         {
           $Out .= "\t" x $Level;
