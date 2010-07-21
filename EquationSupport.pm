@@ -2,7 +2,7 @@ package SWL::EquationSupport;
 
 use 5.004;  # i.e. not tested under earlier versions
 use strict;
-use vars qw($VERSION @ISA @EXPORT $NEED_PATHMUNGE $DVIPNG_BIN $LATEX_BIN $EQUATION_BASELINE $DISPLAY_EQUATION_BEGIN $DISPLAY_EQUATION_END $INLINE_EQUATION_BEGIN $INLINE_EQUATION_END $EQUATION_DIR);
+use vars qw($VERSION @ISA @EXPORT $NEED_PATHMUNGE $DVIPNG_BIN $LATEX_BIN $EQUATION_BASELINE $DISPLAY_EQUATION_BEGIN $DISPLAY_EQUATION_END $INLINE_EQUATION_BEGIN $INLINE_EQUATION_END $EQUATION_DIR $EQUATION_COLOR $EQUATION_BACKGROUND);
 
 $VERSION = '1.0';
 $DVIPNG_BIN = 'dvipng';
@@ -14,6 +14,8 @@ $DISPLAY_EQUATION_END = ' \]';
 $INLINE_EQUATION_BEGIN = '\(';
 $INLINE_EQUATION_END = '\)';
 $EQUATION_DIR = 'eq';
+$EQUATION_COLOR = '1.0 1.0 1.0';
+$EQUATION_BACKGROUND = 'Transparent';
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -80,7 +82,7 @@ sub GenerateEquation{
 	}else{
 		# perform conversion of DVI to PNG
 		my $dvi_filename = $tex_filename; $dvi_filename =~ s/\.tex$/.dvi/;
-		my @dvips_lines = `$DVIPNG_BIN --freetype0 -Q 9 -z 3 --depth -q -T tight -D 130 -fg \"rgb 0.0 0.0 0.0\" -bg Transparent -o $image_filename $dvi_filename`;
+		my @dvips_lines = `$DVIPNG_BIN --freetype0 -Q 9 -z 3 --depth -q -T tight -D 130 -fg \"rgb $EQUATION_COLOR\" -bg $EQUATION_BACKGROUND -o $image_filename $dvi_filename`;
 		if($? != 0){
 			print @dvips_lines;
 		}else{
